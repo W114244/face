@@ -5,18 +5,31 @@ import mediapipe as mp
 import numpy as np
 import math
 
-# --- 1. 核心資料庫 (確保這段在最前面) ---
+# --- 1. 核心資料庫 (17字完整版) ---
 TARGETS = {
-    '大': {"h_range": (0.20, 0.40), "hint": "下巴放鬆垂直下沉", "muscle": "顳肌"},
-    '嗚': {"h_range": (0.05, 0.15), "hint": "雙唇極度向中心縮圓", "muscle": "口輪匝肌"},
-    '一': {"h_range": (0.02, 0.12), "hint": "嘴角用力向耳根拉平", "muscle": "笑肌"},
-    '啊': {"h_range": (0.35, 0.60), "hint": "垂直張力最大化", "muscle": "降口角肌"},
-    '喔': {"h_range": (0.25, 0.45), "hint": "呈垂直長橢圓形", "muscle": "口輪匝肌上層"}
+    '大': {"h_range": (0.20, 0.40), "hint": "下巴放鬆垂直下沉"},
+    '嗚': {"h_range": (0.05, 0.15), "hint": "雙唇極度向中心縮圓"},
+    '一': {"h_range": (0.02, 0.12), "hint": "嘴角用力向耳根拉平"},
+    '啊': {"h_range": (0.35, 0.60), "hint": "垂直張力最大化"},
+    '喔': {"h_range": (0.25, 0.45), "hint": "呈垂直長橢圓形"},
+    '屋': {"h_range": (0.02, 0.12), "hint": "最緊湊的縮小圓孔"},
+    '誒': {"h_range": (0.12, 0.25), "hint": "嘴角微張並橫向拉開"},
+    '七': {"h_range": (0.05, 0.15), "hint": "橫向拉力極限，露牙"},
+    '咪': {"h_range": (0.00, 0.08), "hint": "抿嘴延展，測試肌肉耐力"},
+    '咕': {"h_range": (0.10, 0.20), "hint": "後舌根發力，嘴微圓"},
+    '咖': {"h_range": (0.30, 0.50), "hint": "舌根下沉，大張口"},
+    '唏': {"h_range": (0.05, 0.15), "hint": "牙齒微合，嘴角拉開"},
+    '蘇': {"h_range": (0.08, 0.18), "hint": "唇部微突，小圓口"},
+    '特': {"h_range": (0.15, 0.25), "hint": "舌尖抵齒齦，瞬間彈開"},
+    '勒': {"h_range": (0.10, 0.20), "hint": "舌尖彈擊，口型自然"},
+    '配': {"h_range": (0.15, 0.30), "hint": "雙唇爆發力訓練"},
+    '美': {"h_range": (0.05, 0.15), "hint": "抿嘴後放鬆，唇肌訓練"}
 }
 
-st.set_page_config(page_title="AI Speech Coach")
-st.title("🗣️ AI 語言教練")
+st.set_page_config(page_title="AI Speech Coach", layout="centered")
+st.title("🗣️ AI 語言教練 (17字完整版)")
 
+# 介面設定
 sel_word = st.sidebar.selectbox("🎯 選擇練習字", list(TARGETS.keys()))
 
 class FaceProcessor(VideoTransformerBase):
@@ -25,24 +38,29 @@ class FaceProcessor(VideoTransformerBase):
 
     def transform(self, frame):
         img = frame.to_ndarray(format="bgr24")
-        img = cv2.flip(img, 1)
+        img = cv2.flip(img, 1) # 鏡像處理
         h_img, w_img, _ = img.shape
         results = self.face_mesh.process(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
         
         if results.multi_face_landmarks:
             for flm in results.multi_face_landmarks:
                 lm = flm.landmark
+                # 計算臉部基準寬度以進行歸一化
                 f_w = math.sqrt((lm[454].x - lm[234].x)**2 + (lm[454].y - lm[234].y)**2)
+                
+                # 繪製嘴部追蹤點 (13為上唇中心, 14為下唇中心)
                 cv2.circle(img, (int(lm[13].x*w_img), int(lm[13].y*h_img)), 3, (0, 255, 0), -1)
                 cv2.circle(img, (int(lm[14].x*w_img), int(lm[14].y*h_img)), 3, (0, 255, 0), -1)
-        return img
+        
+        # --- 你之前漏掉的關鍵這行 ---
+        return img 
 
+# WebRTC 元件啟動
 webrtc_streamer(
-    key="speech-coach", 
+    key="speech-coach-v1", 
     video_transformer_factory=FaceProcessor,
     rtc_configuration=RTCConfiguration({"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}),
     media_stream_constraints={"video": True, "audio": False}
 )
 
 st.info(f"💡 指引：{TARGETS[sel_word]['hint']}")
-st.warning(f"💪 訓練肌肉：{TARGETS[sel_word]['muscle']}")
