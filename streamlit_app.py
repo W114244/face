@@ -5,7 +5,7 @@ import mediapipe as mp
 import numpy as np
 import math
 
-# --- 1. 核心資料庫 (17字完整版) ---
+# --- 1. 核心資料庫 (完整 17 字) ---
 TARGETS = {
     '大': {"h_range": (0.20, 0.40), "hint": "下巴放鬆垂直下沉"},
     '嗚': {"h_range": (0.05, 0.15), "hint": "雙唇極度向中心縮圓"},
@@ -27,10 +27,9 @@ TARGETS = {
 }
 
 st.set_page_config(page_title="AI Speech Coach", layout="centered")
-st.title("🗣️ AI 語言教練 (17字完整版)")
+st.title("🗣️ AI 語言教練 (17字完全體)")
 
-# 介面設定
-sel_word = st.sidebar.selectbox("🎯 選擇練習字", list(TARGETS.keys()))
+sel_word = st.sidebar.selectbox("🎯 練習目標", list(TARGETS.keys()))
 
 class FaceProcessor(VideoTransformerBase):
     def __init__(self):
@@ -38,29 +37,25 @@ class FaceProcessor(VideoTransformerBase):
 
     def transform(self, frame):
         img = frame.to_ndarray(format="bgr24")
-        img = cv2.flip(img, 1) # 鏡像處理
+        img = cv2.flip(img, 1) # 鏡像
         h_img, w_img, _ = img.shape
         results = self.face_mesh.process(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
         
         if results.multi_face_landmarks:
             for flm in results.multi_face_landmarks:
                 lm = flm.landmark
-                # 計算臉部基準寬度以進行歸一化
-                f_w = math.sqrt((lm[454].x - lm[234].x)**2 + (lm[454].y - lm[234].y)**2)
-                
-                # 繪製嘴部追蹤點 (13為上唇中心, 14為下唇中心)
+                # 繪製追蹤點幫助對準
                 cv2.circle(img, (int(lm[13].x*w_img), int(lm[13].y*h_img)), 3, (0, 255, 0), -1)
                 cv2.circle(img, (int(lm[14].x*w_img), int(lm[14].y*h_img)), 3, (0, 255, 0), -1)
         
-        # --- 你之前漏掉的關鍵這行 ---
+        # --- 補上這行靈魂 return ---
         return img 
 
-# WebRTC 元件啟動
 webrtc_streamer(
-    key="speech-coach-v1", 
+    key="speech-coach-v2", 
     video_transformer_factory=FaceProcessor,
     rtc_configuration=RTCConfiguration({"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}),
     media_stream_constraints={"video": True, "audio": False}
 )
 
-st.info(f"💡 指引：{TARGETS[sel_word]['hint']}")
+st.info(f"💡 發音指引：{TARGETS[sel_word]['hint']}")
