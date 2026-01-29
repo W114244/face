@@ -6,7 +6,7 @@ import numpy as np
 import time
 import math
 
-# --- 核心資料庫 (17字雙軸比例) ---
+# --- 1. 核心資料庫 ---
 TARGETS = {
     '大': {"h_range": (0.20, 0.40), "w_range": (0.35, 0.55), "hint": "下巴放鬆垂直下沉", "muscle": "顳肌"},
     '嗚': {"h_range": (0.05, 0.15), "w_range": (0.15, 0.30), "hint": "雙唇極度向中心縮圓", "muscle": "口輪匝肌"},
@@ -16,8 +16,9 @@ TARGETS = {
 }
 
 st.set_page_config(page_title="AI Speech Coach")
-st.title("🗣️ AI 語言教練 (手機雲端版)")
+st.title("🗣️ AI 語言教練")
 
+# 介面設定
 sel_word = st.sidebar.selectbox("🎯 選擇練習字", list(TARGETS.keys()))
 diff_lv = st.sidebar.slider("🔥 難度 (1-5)", 1, 5, 3)
 
@@ -37,10 +38,17 @@ class FaceProcessor(VideoTransformerBase):
                 # 計算嘴部比例
                 f_w = math.sqrt((lm[454].x - lm[234].x)**2 + (lm[454].y - lm[234].y)**2)
                 # 簡單畫出關鍵點
-                cv2.circle(img, (int(lm[13].x*w_img), int(lm[13].y*h_img)), 2, (0, 255, 0), -1)
-                cv2.circle(img, (int(lm[14].x*w_img), int(lm[14].y*h_img)), 2, (0, 255, 0), -1)
+                cv2.circle(img, (int(lm[13].x*w_img), int(lm[13].y*h_img)), 3, (0, 255, 0), -1)
+                cv2.circle(img, (int(lm[14].x*w_img), int(lm[14].y*h_img)), 3, (0, 255, 0), -1)
         return img
 
-webrtc_streamer(key="coach", video_transformer_factory=FaceProcessor, 
-                rtc_configuration=RTCConfiguration({"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}))
+# WebRTC 啟動
+webrtc_streamer(
+    key="coach", 
+    video_transformer_factory=FaceProcessor,
+    rtc_configuration=RTCConfiguration({"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}),
+    media_stream_constraints={"video": True, "audio": False}
+)
+
 st.info(f"💡 指引：{TARGETS[sel_word]['hint']}")
+st.warning(f"💪 訓練肌肉：{TARGETS[sel_word]['muscle']}")
