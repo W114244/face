@@ -6,7 +6,7 @@ import numpy as np
 import time
 import math
 
-# --- 1. 核心資料庫 (17字雙軸比例) ---
+# --- 核心資料庫 (17字雙軸比例) ---
 TARGETS = {
     '大': {"h_range": (0.20, 0.40), "w_range": (0.35, 0.55), "hint": "下巴放鬆垂直下沉", "muscle": "顳肌"},
     '嗚': {"h_range": (0.05, 0.15), "w_range": (0.15, 0.30), "hint": "雙唇極度向中心縮圓", "muscle": "口輪匝肌"},
@@ -24,7 +24,6 @@ diff_lv = st.sidebar.slider("🔥 難度 (1-5)", 1, 5, 3)
 class FaceProcessor(VideoTransformerBase):
     def __init__(self):
         self.face_mesh = mp.solutions.face_mesh.FaceMesh(refine_landmarks=True)
-        self.hold_start = None
 
     def transform(self, frame):
         img = frame.to_ndarray(format="bgr24")
@@ -35,12 +34,11 @@ class FaceProcessor(VideoTransformerBase):
         if results.multi_face_landmarks:
             for flm in results.multi_face_landmarks:
                 lm = flm.landmark
+                # 計算嘴部比例
                 f_w = math.sqrt((lm[454].x - lm[234].x)**2 + (lm[454].y - lm[234].y)**2)
-                curr_h = abs(lm[13].y - lm[14].y) / f_w
-                
-                # 簡單畫出嘴部重點
-                cv2.circle(img, (int(lm[13].x*w_img), int(lm[13].y*h_img)), 3, (0,255,0), -1)
-                cv2.circle(img, (int(lm[14].x*w_img), int(lm[14].y*h_img)), 3, (0,255,0), -1)
+                # 簡單畫出關鍵點
+                cv2.circle(img, (int(lm[13].x*w_img), int(lm[13].y*h_img)), 2, (0, 255, 0), -1)
+                cv2.circle(img, (int(lm[14].x*w_img), int(lm[14].y*h_img)), 2, (0, 255, 0), -1)
         return img
 
 webrtc_streamer(key="coach", video_transformer_factory=FaceProcessor, 
